@@ -1,57 +1,30 @@
 // whenever the popup button is clicked, this code is run
 
-function scanBtn() {
-    console.log("button is scannign");
-}
+
+  async function getCurrentTab() {
+    let queryOptions = { active: true, lastFocusedWindow: true };
+    // `tab` will either be a `tabs.Tab` instance or `undefined`.
+    let [tab] = await chrome.tabs.query(queryOptions);
+    return tab;
+  }
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("scanBtn");
-  btn.addEventListener("click", () => {
-    console.log("button is scanning");
-    scanBtn();
-  });
-});
+  btn.addEventListener("click", async () => {
 
-document.addEventListener("DOMContentLoaded", () => {
-  const scanBtn = document.getElementById("scanBtn");
-  const demoBtn = document.getElementById("demoBtn");
-  const resultsDiv = document.getElementById("results");
+    // check whether the user is on the gmail tab
+    let curTab = await getCurrentTab();  // wait for the promise to resolve
+    if (!curTab) {
+      console.log("No active tab found");
+      return;
+    }
 
-  // Scan button: calls background.js to scan Gmail
-  scanBtn.addEventListener("click", () => {
-    resultsDiv.textContent = "Requesting permission and scanning...";
-    chrome.runtime.sendMessage({ action: "scan" }, (response) => {
-      if (!response) {
-        resultsDiv.textContent = "No response from background script.";
-        return;
-      }
-      if (response.error) {
-        resultsDiv.textContent = "Error: " + response.error;
-        return;
-      }
-      const messages = response.messages;
-      resultsDiv.innerHTML = "";
-      if (!messages || messages.length === 0) {
-        resultsDiv.textContent = "No recent messages found.";
-        return;
-      }
-      const ul = document.createElement("ul");
-      messages.forEach(m => {
-        const li = document.createElement("li");
-        li.textContent = m.id;
-        ul.appendChild(li);
-      });
-      const title = document.createElement("div");
-      title.className = "verdict";
-      title.textContent = `Found ${messages.length} messages (IDs):`;
-      resultsDiv.appendChild(title);
-      resultsDiv.appendChild(ul);
-    });
-  });
-
-  // Demo button: opens demo.html in a new tab
-  demoBtn.addEventListener("click", () => {
-    const demoUrl = chrome.runtime.getURL("demo.html");
-    window.open(demoUrl, "_blank");
+    if (curTab.url.startsWith("https://mail.google.com")) {
+      console.log("Current Gmail tab:", curTab.url);
+      // Here you can send a message to background.js to start scan
+      chrome.runtime.sendMessage({ type: "startScan", tabId: curTab.id });
+    } else {
+      console.log("Please open Gmail to scan");
+    }
   });
 });
