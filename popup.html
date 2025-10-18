@@ -2,13 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PhishGuard</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h3>PhishGuard</h3>
-  <button id="scanBtn">Scan Recent Emails</button>
-  <div id="results" class="result">No scan yet.</div>
+
+  <div class="header">
+    <p class="title">PhishGuard</p>
+    <p class="description">Protect your accounts from scams</p>
+  </div>
+
+  <div class="button">
+    <button id="scanBtn">Scan Recent Emails</button>
+  </div>
+
+  <div class="results">
+    <p>No scan yet</p>
+  </div>
 
   <script src="popup.js"></script>
 </body>
