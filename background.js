@@ -1,37 +1,80 @@
-// background.js
-// Make sure manifest.json has "identity" permission and oauth2.client_id configured.
+// background.js (Manifest V3 compatible)
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg && msg.action === "scan") {
-    // Ask Chrome for an OAuth token (interactive -> shows consent popup if needed)
-    chrome.identity.getAuthToken({ interactive: true }, function(token) {
-      if (chrome.runtime.lastError || !token) {
-        sendResponse({ error: chrome.runtime.lastError ? chrome.runtime.lastError.message : "No token" });
-        return; // note: sendResponse called synchronously above; but we also use return true below
-      }
+// scan function returns a Promise that resolves with Gmail snippets
+async function scan() {
+    return new Promise((resolve, reject) => {
+        chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+            // edge case - get the token failed
+            if (chrome.runtime.lastError || !token) {
+                console.error("Failed to get OAuth token:", chrome.runtime.lastError);
+                reject(chrome.runtime.lastError);
+                return;
+            }
 
-      // Example: call Gmail API to list recent messages (maxResults=10)
-      fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10", {
-        headers: {
-          "Authorization": "Bearer " + token,
-          "Accept": "application/json"
-        }
-      })
-      .then(response => {
-        if (!response.ok) throw new Error("Gmail API error: " + response.status);
-        return response.json();
-      })
-      .then(data => {
-        // data.messages is an array of message objects (id, threadId)
-        // For demo purposes we'll return the message ids; you can then fetch each message body
-        sendResponse({ messages: data.messages || [] });
-      })
-      .catch(err => {
-        sendResponse({ error: err.message });
-      });
+            console.log("OAuth token acquired");
+
+            try {
+                const threadsResponse = await fetch(
+                    "https://gmail.googleapis.com/gmail/v1/users/me/threads",
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+
+
+                const threadsData = await threadsResponse.json();
+
+                const threads = threadsData.threads || [];
+
+                const snippets = [];
+
+                // Get each thread's first message snippet
+                for (const thread of threads) {
+                    // get individual response
+                    const threadResp = await fetch(
+                        `https://gmail.googleapis.com/gmail/v1/users/me/threads/${thread.id}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    const threadData = await threadResp.json();
+                    // console.log(threadData["messages"][0]["labelIds"]);
+                    if (threadData["messages"][0]["labelIds"].includes('INBOX')) {
+                        // the message is in the inbox and can therefore be analyzed
+                        console.log("here!!!");
+                        analyzeMsg(threadData["messages"][0]["snippet"], 
+                                   threadData["messages"][0]["payload"]["headers"])
+                                   // attachments
+                                   // link is safe - safe browsing API
+                    }
+                    
+                }
+
+                resolve(snippets);
+            } catch (err) {
+                console.error("Error fetching Gmail data:", err);
+                reject(err);
+            }
+        });
     });
+}
 
-    // Keep the message channel open for sendResponse called asynchronously.
-    return true;
-  }
+function analyzeMsg(snippet, headers) {
+    console.log("headers:");
+    console.log(headers);
+}
+// Listener for messages from popup
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "startScan") {
+        console.log("Received scan request for tabId:", msg.tabId);
+
+        scan()
+            .then((results) => {
+                // console.log("Scan results:", results);
+                sendResponse({ ok: true, results });
+            })
+            .catch((err) => {
+                sendResponse({ ok: false, error: err.toString() });
+            });
+
+        return true; // important to keep sendResponse alive for async
+    }
 });
