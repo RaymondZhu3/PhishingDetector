@@ -3,7 +3,7 @@
   "name": "PhishGuard (Gmail API Demo)",
   "version": "1.0",
   "description": "Scan Gmail messages for phishing using the Gmail API and OAuth.",
-  "permissions": ["identity", "scripting", "activeTab", "storage"],
+  "permissions": ["identity", "scripting", "activeTab", "storage", "activeTab"],
   "oauth2": {
     "client_id": "875596402669-eu35ok9b47h58c00tk5bcm4aaua6k9mu.apps.googleusercontent.com",
     "scopes": [
