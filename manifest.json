@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PhishGuard (Gmail API Demo)",
+  "name": "PhishGuard",
   "version": "1.0",
   "description": "Scan Gmail messages for phishing using the Gmail API and OAuth.",
   "permissions": ["identity", "scripting", "activeTab", "storage", "activeTab"],

@@ -1,99 +1,37 @@
-//oauth2 auth
-chrome.identity.getAuthToken(
-    { 'interactive': true },
-    function () {
-        //load Google's javascript client libraries
-        window.gapi_onload = authorize;
-        loadScript('https://apis.google.com/js/client.js');
-    }
-);
-
-function loadScript(url) {
-    var request = new XMLHttpRequest();
-
-    request.onreadystatechange = function () {
-        if (request.readyState !== 4) {
-            return;
-        }
-
-        if (request.status !== 200) {
-            return;
-        }
-
-        eval(request.responseText);
-    };
-
-    request.open('GET', url);
-    request.send();
-}
-
-function authorize() {
-    gapi.auth.authorize(
-        {
-            client_id: 'bfdojdgomnjechfcdiedhdflldbpeiij',
-            immediate: true,
-            scope: 'https://www.googleapis.com/auth/gmail.modify'
-        },
-        function () {
-            gapi.client.load('gmail', 'v1', gmailAPILoaded);
-        }
-    );
-}
-
-function scan() {
-    
-}
-
+// background.js
+// Make sure manifest.json has "identity" permission and oauth2.client_id configured.
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "startScan") {
-    console.log("Message received in background", msg.tabId);
-    scan();
-    sendResponse({ ok: true, results: ["demo"] });
-    return true; // important for async response
+  if (msg && msg.action === "scan") {
+    // Ask Chrome for an OAuth token (interactive -> shows consent popup if needed)
+    chrome.identity.getAuthToken({ interactive: true }, function(token) {
+      if (chrome.runtime.lastError || !token) {
+        sendResponse({ error: chrome.runtime.lastError ? chrome.runtime.lastError.message : "No token" });
+        return; // note: sendResponse called synchronously above; but we also use return true below
+      }
+
+      // Example: call Gmail API to list recent messages (maxResults=10)
+      fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10", {
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Accept": "application/json"
+        }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Gmail API error: " + response.status);
+        return response.json();
+      })
+      .then(data => {
+        // data.messages is an array of message objects (id, threadId)
+        // For demo purposes we'll return the message ids; you can then fetch each message body
+        sendResponse({ messages: data.messages || [] });
+      })
+      .catch(err => {
+        sendResponse({ error: err.message });
+      });
+    });
+
+    // Keep the message channel open for sendResponse called asynchronously.
+    return true;
   }
 });
-
-
-
-/* here are some utility functions for making common gmail requests */
-function getThreads(query, labels) {
-    return gapi.client.gmail.users.threads.list({
-        userId: 'me',
-        q: query, //optional query
-        labelIds: labels //optional labels
-    }); //returns a promise
-}
-
-//takes in an array of threads from the getThreads response
-function getThreadDetails(threads) {
-    var batch = new gapi.client.newBatch();
-
-    for (var ii = 0; ii < threads.length; ii++) {
-        batch.add(gapi.client.gmail.users.threads.get({
-            userId: 'me',
-            id: threads[ii].id
-        }));
-    }
-
-    return batch;
-}
-
-function getThreadHTML(threadDetails) {
-    var body = threadDetails.result.messages[0].payload.parts[1].body.data;
-    return B64.decode(body);
-}
-
-function archiveThread(id) {
-    var request = gapi.client.request(
-        {
-            path: '/gmail/v1/users/me/threads/' + id + '/modify',
-            method: 'POST',
-            body: {
-                removeLabelIds: ['INBOX']
-            }
-        }
-    );
-
-    request.execute();
-}
