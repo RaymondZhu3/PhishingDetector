@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PhishGuard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      min-width: 260px;
+      padding: 8px;
+    }
+    h3 {
+      text-align: center;
+    }
+    button {
+      margin: 8px 0;
+      padding: 8px;
+      width: 100%;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .verdict {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h3>PhishGuard</h3>
+  <button id="scanBtn">Scan Recent Emails</button>
+  <div id="results" class="result">No scan yet.</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
