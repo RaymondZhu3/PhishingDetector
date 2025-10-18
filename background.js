@@ -1,99 +1,68 @@
-//oauth2 auth
-chrome.identity.getAuthToken(
-    { 'interactive': true },
-    function () {
-        //load Google's javascript client libraries
-        window.gapi_onload = authorize;
-        loadScript('https://apis.google.com/js/client.js');
-    }
-);
+// background.js (Manifest V3 compatible)
 
-function loadScript(url) {
-    var request = new XMLHttpRequest();
-
-    request.onreadystatechange = function () {
-        if (request.readyState !== 4) {
-            return;
-        }
-
-        if (request.status !== 200) {
-            return;
-        }
-
-        eval(request.responseText);
-    };
-
-    request.open('GET', url);
-    request.send();
-}
-
-function authorize() {
-    gapi.auth.authorize(
-        {
-            client_id: 'bfdojdgomnjechfcdiedhdflldbpeiij',
-            immediate: true,
-            scope: 'https://www.googleapis.com/auth/gmail.modify'
-        },
-        function () {
-            gapi.client.load('gmail', 'v1', gmailAPILoaded);
-        }
-    );
-}
-
-function scan() {
-    
-}
-
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "startScan") {
-    console.log("Message received in background", msg.tabId);
-    scan();
-    sendResponse({ ok: true, results: ["demo"] });
-    return true; // important for async response
-  }
-});
-
-
-
-/* here are some utility functions for making common gmail requests */
-function getThreads(query, labels) {
-    return gapi.client.gmail.users.threads.list({
-        userId: 'me',
-        q: query, //optional query
-        labelIds: labels //optional labels
-    }); //returns a promise
-}
-
-//takes in an array of threads from the getThreads response
-function getThreadDetails(threads) {
-    var batch = new gapi.client.newBatch();
-
-    for (var ii = 0; ii < threads.length; ii++) {
-        batch.add(gapi.client.gmail.users.threads.get({
-            userId: 'me',
-            id: threads[ii].id
-        }));
-    }
-
-    return batch;
-}
-
-function getThreadHTML(threadDetails) {
-    var body = threadDetails.result.messages[0].payload.parts[1].body.data;
-    return B64.decode(body);
-}
-
-function archiveThread(id) {
-    var request = gapi.client.request(
-        {
-            path: '/gmail/v1/users/me/threads/' + id + '/modify',
-            method: 'POST',
-            body: {
-                removeLabelIds: ['INBOX']
+// scan function returns a Promise that resolves with Gmail snippets
+async function scan() {
+    return new Promise((resolve, reject) => {
+        // if 
+        chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+            // edge case - get the token failed
+            if (chrome.runtime.lastError || !token) {
+                console.error("Failed to get OAuth token:", chrome.runtime.lastError);
+                reject(chrome.runtime.lastError);
+                return;
             }
-        }
-    );
 
-    request.execute();
+            console.log("OAuth token acquired");
+
+            try {
+                // Get the 5 most recent threads
+                const threadsResponse = await fetch(
+                    "https://gmail.googleapis.com/gmail/v1/users/me/threads?maxResults=5",
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+                const threadsData = await threadsResponse.json();
+                const threads = threadsData.threads || [];
+
+                const snippets = [];
+
+                // Get each thread's first message snippet
+                for (const thread of threads) {
+                    const threadResp = await fetch(
+                        `https://gmail.googleapis.com/gmail/v1/users/me/threads/${thread.id}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    const threadData = await threadResp.json();
+                    const messages = threadData.messages || [];
+                    if (messages.length > 0) {
+                        snippets.push(messages[0].snippet || "(no snippet)");
+                    }
+                }
+
+                resolve(snippets);
+            } catch (err) {
+                console.error("Error fetching Gmail data:", err);
+                reject(err);
+            }
+        });
+    });
 }
+
+// Listener for messages from popup
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "startScan") {
+        console.log("Received scan request for tabId:", msg.tabId);
+
+        scan()
+            .then((results) => {
+                console.log("Scan results:", results);
+                sendResponse({ ok: true, results });
+            })
+            .catch((err) => {
+                sendResponse({ ok: false, error: err.toString() });
+            });
+
+        return true; // important to keep sendResponse alive for async
+    }
+});
