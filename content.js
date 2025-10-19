@@ -1,48 +1,185 @@
+yellowCounter = 0;
+redCounter = 0;
+
+function isGibberish(str) {
+
+    if (str.toLowerCase() === "google") {
+        return false;
+    }
+    // Split the string into words (skip punctuation)
+    const words = str.split(/\s+/).map(w => w.replace(/[^a-zA-Z]/g, "")).filter(Boolean);
+
+    for (let word of words) {
+        // Heuristic 1: 5+ consonants in a row
+        if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(word)) return true;
+
+        // Heuristic 2: No vowels
+        if (!/[aeiou]/i.test(word) && word.length > 3) return true;
+
+        // Heuristic 3: Digits dominate letters
+        const digits = str.replace(/\D/g, "");
+        const lettersOnly = str.replace(/[^a-zA-Z]/g, "");
+        if (digits.length > lettersOnly.length / 2) return true;
+    }
+
+    return false; // nothing triggered
+}
+
+
 // ---------- Helper: Compute Suspicious Score ----------
 function computeSuspiciousScore(email) {
     let score = 0;
+    console.log("Starting score:", score);
 
     const { sender = "", replyTo = "", subject = "", body = "", attachments = [], links = [] } = email;
 
-    // Sender checks
-    const gibberishRegex = /^[a-z0-9]{5,}$/i;
     const senderLocal = sender.split('@')[0] || "";
     const senderDomain = sender.split('@')[1] || "";
-    if (senderLocal.match(gibberishRegex)) score += 30;
-    if (sender.toLowerCase().includes("noreply") || sender.toLowerCase().includes("admin")) score += 10;
-
-    const genericNames = ["customer service", "support team", "admin"];
-    genericNames.forEach(name => { if (sender.toLowerCase().includes(name)) score += 15; });
-
-    // Reply-to mismatch
     const replyToDomain = replyTo.split('@')[1] || "";
-    if (replyTo && replyToDomain !== senderDomain) score += 25;
 
-    // Subject checks
-    const urgentWords = ["urgent", "verify", "action required", "password", "login", "account"];
-    urgentWords.forEach(word => { if (subject.toLowerCase().includes(word)) score += 20; });
+    console.log("Sender local:", senderLocal);
 
-    // Body/link checks
-    const linkMatches = body.match(/https?:\/\/[^\s]+/g) || [];
-    const allLinks = [...linkMatches, ...links];
-    allLinks.forEach(link => {
-        if (senderDomain && !link.includes(senderDomain)) score += 25;
-        if (/bit\.ly|tinyurl|goo\.gl/i.test(link)) score += 15;
-        if (link.length > 75) score += 5;
+    // --- Sender checks ---
+
+    // Gibberish sender name
+    if (isGibberish(sender)) {
+        console.log("Gibberish sender detected");
+        score += 50;
+    }
+
+    // noreply/admin keywords
+    if (sender.toLowerCase().includes("noreply") || sender.toLowerCase().includes("admin")) {
+        console.log("noreply/admin keyword detected");
+        score += 20;
+    }
+
+    // Generic names
+    const genericNames = ["customer service", "support team", "admin"];
+    genericNames.forEach(name => {
+        if (sender.toLowerCase().includes(name)) {
+            console.log("Generic sender name detected:", name);
+            score += 25;
+        }
     });
 
-    // Attachments
-    if (attachments.length > 0 && body.trim().length < 10) score += 10;
+
+    // Reply-to mismatch
+    if (replyTo && replyToDomain !== senderDomain) {
+        console.log("Reply-to domain mismatch");
+        score += 25;
+    }
+
+    // --- Subject checks ---
+    const urgentWords = ["urgent", "immediately", "final notice", "verify", "action required", 
+                         "password", "login", "account", "hacked", "ineligible", "time-sensitive", 
+                         "debt", "loan", "benefits"];
+    urgentWords.forEach(word => {
+        if (subject.toLowerCase().includes(word)) {
+            console.log("Urgent keyword detected:", word);
+            score += 20;
+        }
+    });
+
+    // --- Body / link checks ---
+    const linkMatches = body.match(/https?:\/\/[^\s]+/g) || [];
+    const allLinks = [...linkMatches, ...links];
+
+    for (const link of allLinks) {
+        // External redirect
+        if (senderDomain && !link.includes(senderDomain)) {
+            console.log("External redirect detected:", link);
+            score += 35;
+        }
+
+        // Shortened URLs
+        if (/bit\.ly|tinyurl|goo\.gl/i.test(link)) {
+            console.log("Shortened URL detected:", link);
+            score += 15;
+        }
+
+        // Long link
+        if (link.length > 75) {
+            console.log("Long link detected");
+            score += 5;
+        }
+
+        // Check if malicious (async)
+        if (isMalicious(link)) {
+            console.log("Malicious link detected:", link);
+            return 100; // immediate flag
+        }
+    }
+
+    urgentWords.forEach(word => {
+        if (body.toLowerCase().includes(word)) {
+            console.log("Urgent keyword detected:", word);
+            score += 20;
+        }
+    });
+
+    // --- Attachments ---
+    if (attachments.length > 0 && body.trim().length < 10) {
+        score += 20;
+    }
+
     const riskyExt = [".exe", ".js", ".scr"];
-    attachments.forEach(att => riskyExt.forEach(ext => { if (att.toLowerCase().endsWith(ext)) score += 20; }));
+    attachments.forEach(att => {
+        riskyExt.forEach(ext => {
+            if (att.toLowerCase().endsWith(ext)) {
+                console.log("Risky attachment detected:", ext);
+                score += 25;
+            }
+        });
+    });
 
-    // Emojis and punctuation
-    const emojiMatches = body.match(/[\u{1F600}-\u{1F64F}]/gu) || [];
-    if (emojiMatches.length > 3) score += 10;
-    if (/[!]{3,}|[?]{3,}/.test(subject + body)) score += 10;
+    // --- Emojis and punctuation ---
+	const emojiRegex = /([\u231A-\u231B]|[\u23E9-\u23EC]|[\u23F0]|[\u23F3]|[\u25AA-\u25AB]|[\u25B6]|[\u25C0]|[\u25FB-\u25FE]|[\u2600-\u27BF]|[\u1F300-\u1F6FF]|[\u1F900-\u1F9FF]|[\u1F1E6-\u1F1FF])/g;
 
+    if (body.match(emojiRegex).length > 1) {
+        console.log("Multiple emojis detected");
+        score += 15;
+    }
+
+    // Excessive punctuation
+    if (/[!]{3,}|[?]{3,}/.test(subject + body)) {
+        console.log("Excessive punctuation detected");
+        score += 40;
+    }
+
+    console.log("Final computed score:", score);
     return Math.min(score, 100);
 }
+
+function isMalicious(link) {
+    chrome.runtime.sendMessage({ type: "checkMalicious", link })
+    .then(isBad => {
+        return isBad
+    });    
+}
+
+function isGibberish(str) {
+	// Remove numbers and symbols
+	const lettersOnly = str.replace(/[^a-zA-Z]/g, "");
+
+	// Heuristic 1: 5 or more consonants in a row
+	if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lettersOnly)) return true;
+
+	// Heuristic 2: Unnatural character mix (e.g., xzq8r2k)
+	const entropy = lettersOnly.length
+		? (new Set(lettersOnly.toLowerCase()).size / lettersOnly.length)
+		: 0;
+	if (entropy > 0.7 && lettersOnly.length > 6) return true;
+
+	// Heuristic 3: No vowels
+	if (!/[aeiou]/i.test(lettersOnly)) return true;
+
+	// Heuristic 4: Weird ratio of letters to digits
+	const digits = str.replace(/\D/g, "");
+	if (digits.length > lettersOnly.length / 2) return true;
+
+	return false;
+}
+
 
 // ---------- Highlight Email ----------
 function highlightEmail(emailElement, score) {
@@ -50,10 +187,10 @@ function highlightEmail(emailElement, score) {
 
     if (score > 70) {
         emailElement.style.backgroundColor = "red";
-    } else if (score > 30) {
+        ++redCounter;
+    } else if (score >= 20) {
         emailElement.style.backgroundColor = "yellow";
-    } else {
-        emailElement.style.backgroundColor = "green";
+        ++yellowCounter;
     }
 
     emailElement.title = `Phishing score: ${score}`;
@@ -62,6 +199,7 @@ function highlightEmail(emailElement, score) {
 // ---------- Check Email ----------
 function checkEmail(emailElement, emailData) {
     const score = computeSuspiciousScore(emailData);
+    console.log("total score: " + score);
     highlightEmail(emailElement, score);
 }
 

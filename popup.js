@@ -8,36 +8,36 @@ async function getCurrentTab() {
     return tab;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("scanBtn");
-    btn.addEventListener("click", async () => {
+// document.addEventListener("DOMContentLoaded", () => {
+//     const btn = document.getElementById("scanBtn");
+//     btn.addEventListener("click", async () => {
 
-        // check whether the user is on the gmail tab
-        let curTab = await getCurrentTab();  // wait for the promise to resolve
-        if (!curTab) {
-            console.log("No active tab found");
-            return;
-        }
+//         // check whether the user is on the gmail tab
+//         let curTab = await getCurrentTab();  // wait for the promise to resolve
+//         if (!curTab) {
+//             console.log("No active tab found");
+//             return;
+//         }
 
-        if (curTab.url.startsWith("https://mail.google.com")) {
-            console.log("Current Gmail tab:", curTab.url);
-            // Here you can send a message to background.js to start scan
-            chrome.runtime.sendMessage(
-                { type: "startScan", tabId: curTab.id },
-                (response) => {
-                    if (response.ok) {
-                        results = response.results;
-                        console.log("Num Yellow: " + results[0] + "\nNum Red: " + results[1]);
-                    } else {
-                        console.error("Scan error:", response.error);
-                    }
-                }
-            );
-        } else {
-            console.log("Please open Gmail to scan");
-        }
-    });
-});
+//         if (curTab.url.startsWith("https://mail.google.com")) {
+//             console.log("Current Gmail tab:", curTab.url);
+//             // Here you can send a message to background.js to start scan
+//             chrome.runtime.sendMessage(
+//                 { type: "startScan", tabId: curTab.id },
+//                 (response) => {
+//                     if (response.ok) {
+//                         results = response.results;
+//                         console.log("Num Yellow: " + results[0] + "\nNum Red: " + results[1]);
+//                     } else {
+//                         console.error("Scan error:", response.error);
+//                     }
+//                 }
+//             );
+//         } else {
+//             console.log("Please open Gmail to scan");
+//         }
+//     });
+// });
 
 document.getElementById("scanBtn").addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
