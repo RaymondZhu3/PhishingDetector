@@ -1,5 +1,4 @@
 function isGibberish(str) {
-
     if (str.toLowerCase() === "google") {
         return false;
     }
@@ -8,15 +7,25 @@ function isGibberish(str) {
 
     for (let word of words) {
         // Heuristic 1: 5+ consonants in a row
-        if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(word)) return true;
+        if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(word)) { 
+            console.log("1");
+            return true;
+        }
 
         // Heuristic 2: No vowels
-        if (!/[aeiou]/i.test(word) && word.length > 3) return true;
+        if (!/[aeiou]/i.test(word) && word.length > 3) {
+            console.log("2");
+            return true;
+        }
 
         // Heuristic 3: Digits dominate letters
         const digits = str.replace(/\D/g, "");
         const lettersOnly = str.replace(/[^a-zA-Z]/g, "");
-        if (digits.length > lettersOnly.length / 2) return true;
+        if (digits.length > lettersOnly.length / 2) {
+            console.log("3");
+
+            return true;
+        }
     }
 
     return false; // nothing triggered
@@ -25,6 +34,7 @@ function isGibberish(str) {
 
 // ---------- Helper: Compute Suspicious Score ----------
 function computeSuspiciousScore(email) {
+    console.log(email);
     let score = 0;
     console.log("Starting score:", score);
 
@@ -34,13 +44,15 @@ function computeSuspiciousScore(email) {
     const senderDomain = sender.split('@')[1] || "";
     const replyToDomain = replyTo.split('@')[1] || "";
 
-    console.log("Sender local:", senderLocal);
+    console.log("reoply to domain:", replyToDomain);
 
     // --- Sender checks ---
 
+    console.log();
     // Gibberish sender name
     if (isGibberish(sender)) {
-        console.log("Gibberish sender detected");
+
+        console.log("Gibberish sender detected: " + sender);
         score += 50;
     }
 
@@ -69,7 +81,8 @@ function computeSuspiciousScore(email) {
     // --- Subject checks ---
     const urgentWords = ["urgent", "immediately", "final notice", "verify", "action required",
         "password", "login", "account", "hacked", "ineligible", "time-sensitive",
-        "debt", "loan", "benefits"];
+        "debt", "loan", "benefits", "at risk", "require attention", "require action", 
+        "deleted today", "winner", "confirm"];
     urgentWords.forEach(word => {
         if (subject.toLowerCase().includes(word)) {
             console.log("Urgent keyword detected:", word);
@@ -154,29 +167,6 @@ function computeSuspiciousScore(email) {
 //     });    
 // }
 
-function isGibberish(str) {
-    // Remove numbers and symbols
-    const lettersOnly = str.replace(/[^a-zA-Z]/g, "");
-
-    // Heuristic 1: 5 or more consonants in a row
-    if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(lettersOnly)) return true;
-
-    // Heuristic 2: Unnatural character mix (e.g., xzq8r2k)
-    const entropy = lettersOnly.length
-        ? (new Set(lettersOnly.toLowerCase()).size / lettersOnly.length)
-        : 0;
-    if (entropy > 0.7 && lettersOnly.length > 6) return true;
-
-    // Heuristic 3: No vowels
-    if (!/[aeiou]/i.test(lettersOnly)) return true;
-
-    // Heuristic 4: Weird ratio of letters to digits
-    const digits = str.replace(/\D/g, "");
-    if (digits.length > lettersOnly.length / 2) return true;
-
-    return false;
-}
-
 
 // ---------- Highlight Email ----------
 function highlightEmail(emailElement, score) {
@@ -198,7 +188,6 @@ function highlightEmail(emailElement, score) {
 // ---------- Check Email ----------
 function checkEmail(emailElement, emailData) {
     const score = computeSuspiciousScore(emailData);
-    console.log("total score: " + score);
     return highlightEmail(emailElement, score);
 }
 
@@ -237,8 +226,6 @@ function scanInbox(emails) {
             rCount: redCounter,
             yCount: yellowCounter
         }
-    }, () => {
-        console.log("Email summary updated in storage");
     });
 }
 
@@ -271,32 +258,3 @@ function observeInbox() {
 
 // Start observing once script loads
 observeInbox();
-
-// ---------- Listen for Popup Button ----------
-// chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-//     if (msg.type === "scanNow") {
-// const inboxContainer = document.querySelector("div[role='main']");
-// if (!inboxContainer) {
-//     sendResponse({ ok: false, error: "Inbox container not found" });
-//     return;
-// }
-// const emails = inboxContainer.querySelectorAll("tr.zA");
-// scanInbox(Array.from(emails));
-// sendResponse({ ok: true, scanned: emails.length });
-
-// const fs = require('fs');
-
-
-// // Prepare content
-// const content = `${redCounter}\n${yellowCounter}`;
-
-// // Write to file (overwrites if exists)
-// fs.writeFile('output.txt', content, (err) => {
-// if (err) throw err;
-// console.log('Data written to file!');
-// });
-
-
-// function notifyCounts(deltaRed = 0, deltaYellow = 0) {
-//     chrome.runtime.sendMessage({ type: "incrementCounts", deltaRed, deltaYellow });
-// }

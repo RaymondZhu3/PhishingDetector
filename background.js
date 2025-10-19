@@ -239,36 +239,3 @@
 //             return response.json().length > 0;
 //         })
 // }
-
-
-// // Listener for messages from popup
-// chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-//     if (msg.type === "checkMalicious") {
-//         console.log("Received checkMalicious request", msg.tabId);
-
-//         checkMalicious()
-//             .then((results) => {
-//                 // console.log("Scan results:", results);
-//                 sendResponse({ ok: true, results });
-//             })
-//             .catch((err) => {
-//                 sendResponse({ ok: false, error: err.toString() });
-//             });
-
-//         return true; // important to keep sendResponse alive for async
-//     }
-// });
-
-// chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-//     if (msg.type === "incrementCounts") {
-//         chrome.storage.local.get(["redCount","yellowCount"], (items) => {
-//             const newRed = (items.redCount || 0) + msg.deltaRed;
-//             const newYellow = (items.yellowCount || 0) + msg.deltaYellow;
-//             chrome.storage.local.set({ redCount: newRed, yellowCount: newYellow }, () => {
-//                 chrome.runtime.sendMessage({ type: "countsUpdated", redCount: newRed, yellowCount: newYellow });
-//             });
-//         });
-//         sendResponse({ ok: true });
-//         return true;
-//     }
-// });
