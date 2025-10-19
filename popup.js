@@ -1,55 +1,49 @@
-// whenever the popup button is clicked, this code is run
-
-
-async function getCurrentTab() {
-    let queryOptions = { active: true, lastFocusedWindow: true };
-    // `tab` will either be a `tabs.Tab` instance or `undefined`.
-    let [tab] = await chrome.tabs.query(queryOptions);
-    return tab;
-}
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     const btn = document.getElementById("scanBtn");
-//     btn.addEventListener("click", async () => {
-
-//         // check whether the user is on the gmail tab
-//         let curTab = await getCurrentTab();  // wait for the promise to resolve
-//         if (!curTab) {
-//             console.log("No active tab found");
-//             return;
-//         }
-
-//         if (curTab.url.startsWith("https://mail.google.com")) {
-//             console.log("Current Gmail tab:", curTab.url);
-//             // Here you can send a message to background.js to start scan
-//             chrome.runtime.sendMessage(
-//                 { type: "startScan", tabId: curTab.id },
-//                 (response) => {
-//                     if (response.ok) {
-//                         results = response.results;
-//                         console.log("Num Yellow: " + results[0] + "\nNum Red: " + results[1]);
-//                     } else {
-//                         console.error("Scan error:", response.error);
-//                     }
-//                 }
-//             );
-//         } else {
-//             console.log("Please open Gmail to scan");
-//         }
+// document.getElementById("scanBtn").addEventListener("click", () => {
+//     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+//         chrome.tabs.sendMessage(tabs[0].id, { type: "scanNow" }, (response) => {
+//             if (response.ok) {
+//                 console.log(`Scanned ${response.scanned} emails`);
+//                 alert(`Scanned ${response.scanned} emails!`);
+//             } else {
+//                 console.error(response.error);
+//                 alert("Error scanning emails: " + response.error);
+//             }
+//         });
 //     });
 // });
 
-document.getElementById("scanBtn").addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { type: "scanNow" }, (response) => {
-            if (response.ok) {
-                console.log(`Scanned ${response.scanned} emails`);
-                alert(`Scanned ${response.scanned} emails!`);
-            } else {
-                console.error(response.error);
-                alert("Error scanning emails: " + response.error);
-            }
-        });
+// chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+//         chrome.tabs.sendMessage(tabs[0].id, { type: "scanNow" }, (response) => {
+//             if (response.ok) {
+//                 console.log(`Scanned ${response.scanned} emails`);
+//                 alert(`Scanned ${response.scanned} emails!`);
+//             } else {
+//                 console.error(response.error);
+//                 alert("Error scanning emails: " + response.error);
+//             }
+//         });
+//     });
+
+// console.log(redCounter);
+
+function renderCounts(red, yellow) {
+    const urgentEl = document.getElementsByClassName("urgentVal")[0];
+    const warningEl = document.getElementsByClassName("warningVal")[0];
+    if (urgentEl) urgentEl.textContent = red ?? 0;
+    if (warningEl) warningEl.textContent = yellow ?? 0;
+}
+
+// On popup open
+document.addEventListener("DOMContentLoaded", () => {
+    chrome.storage.local.get(["redCount","yellowCount"], (items) => {
+        renderCounts(items.redCount || 0, items.yellowCount || 0);
     });
+});
+
+// Listen for live updates while popup is open
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === "countsUpdated") {
+        renderCounts(msg.redCount, msg.yellowCount);
+    }
 });
 

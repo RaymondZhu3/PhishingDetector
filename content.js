@@ -104,10 +104,10 @@ function computeSuspiciousScore(email) {
         }
 
         // Check if malicious (async)
-        if (isMalicious(link)) {
-            console.log("Malicious link detected:", link);
-            return 100; // immediate flag
-        }
+        // if (isMalicious(link)) {
+        //     console.log("Malicious link detected:", link);
+        //     return 100; // immediate flag
+        // }
     }
 
     urgentWords.forEach(word => {
@@ -150,12 +150,12 @@ function computeSuspiciousScore(email) {
     return Math.min(score, 100);
 }
 
-function isMalicious(link) {
-    chrome.runtime.sendMessage({ type: "checkMalicious", link })
-    .then(isBad => {
-        return isBad
-    });    
-}
+// function isMalicious(link) {
+//     chrome.runtime.sendMessage({ type: "checkMalicious", link })
+//     .then(isBad => {
+//         return isBad
+//     });    
+// }
 
 function isGibberish(str) {
 	// Remove numbers and symbols
@@ -185,12 +185,12 @@ function isGibberish(str) {
 function highlightEmail(emailElement, score) {
     if (!emailElement) return;
 
-    if (score > 70) {
+    if (score >= 50) {
         emailElement.style.backgroundColor = "red";
-        ++redCounter;
     } else if (score >= 20) {
+        yellowCounter++;
         emailElement.style.backgroundColor = "yellow";
-        ++yellowCounter;
+
     }
 
     emailElement.title = `Phishing score: ${score}`;
@@ -258,15 +258,30 @@ function observeInbox() {
 observeInbox();
 
 // ---------- Listen for Popup Button ----------
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.type === "scanNow") {
-        const inboxContainer = document.querySelector("div[role='main']");
-        if (!inboxContainer) {
-            sendResponse({ ok: false, error: "Inbox container not found" });
-            return;
-        }
-        const emails = inboxContainer.querySelectorAll("tr.zA");
-        scanInbox(Array.from(emails));
-        sendResponse({ ok: true, scanned: emails.length });
-    }
-});
+// chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+//     if (msg.type === "scanNow") {
+        // const inboxContainer = document.querySelector("div[role='main']");
+        // if (!inboxContainer) {
+        //     sendResponse({ ok: false, error: "Inbox container not found" });
+        //     return;
+        // }
+        // const emails = inboxContainer.querySelectorAll("tr.zA");
+        // scanInbox(Array.from(emails));
+        // sendResponse({ ok: true, scanned: emails.length });
+
+        // const fs = require('fs');
+
+
+        // // Prepare content
+        // const content = `${redCounter}\n${yellowCounter}`;
+
+        // // Write to file (overwrites if exists)
+        // fs.writeFile('output.txt', content, (err) => {
+        // if (err) throw err;
+        // console.log('Data written to file!');
+        // });
+
+
+// function notifyCounts(deltaRed = 0, deltaYellow = 0) {
+//     chrome.runtime.sendMessage({ type: "incrementCounts", deltaRed, deltaYellow });
+// }
