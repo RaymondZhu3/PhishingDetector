@@ -38,10 +38,11 @@ async function scan() {
           const threadData = await threadResp.json();
           // console.log(threadData["messages"][0]["labelIds"]);
           if (threadData["messages"][0]["labelIds"].includes('INBOX')) {
+            console.log(threadData["messages"][0]["labelIds"]);
             // the message is in the inbox and can therefore be analyzed
-            // console.log("here!!!");
             console.log("Analyzing message " + threadData["messages"][0].snippet);
-            console.log(analyzeMsg(threadData["messages"][0].snippet,
+
+            console.log("\n" + analyzeMsg(threadData["messages"][0].snippet,
               threadData["messages"][0].payload.headers));
             // attachments
             // link is safe - safe browsing API
@@ -59,14 +60,18 @@ async function scan() {
 }
 
 function getFrom(headers) {
+  console.log(headers); 
   return headers.find(h => h.name === "From").value;
 }
 
 function getSubject(headers) {
-  return headers.find(h => h.name === "Subject").value; 
+  return headers.find(h => h.name === "Subject").value;
 }
 
 function isGibberish(str) {
+  
+  
+  
   // Remove numbers and symbols
   const lettersOnly = str.replace(/[^a-zA-Z]/g, "");
 
@@ -91,13 +96,36 @@ function isGibberish(str) {
 
 
 function analyzeMsg(snippet, headers) {
+  if (snippet === undefined || headers === undefined) {
+    return 0;
+  }
+
+
   const fromAddress = getFrom(headers);
   const subject = getSubject(headers).toLowerCase();
-  const urls = snippet.match( /\b((https?:\/\/|www\.)[^\s"'<>()]+[^\s"'<>().,;!?])/gi);
+  const links = snippet.match(/\b((https?:\/\/|www\.)[^\s"'<>()]+[^\s"'<>().,;!?])/gi);
+
+  for (link in links) {
+    if (isMalicious(link)) {
+      return 100; // automatically malicious link
+    }
+  }
+
   weightedSum = 0;
 
-  if (isGibberish(fromAddress.split(" ")[1])) {
-    weightedSum += 0.25;
+
+  const suspiciousDomains = ["ddnsgeek.com", "ddnsfree.com", "copalzon.my", "etreon.my", 
+                             "kozow.com", "dynu.net", "noip.com", "duckdns.org", "dyn-dns.org", 
+                             "changeip.com", "freedns.afraid.org", "dyn.com", "tzo.com", "yDNS.eu"]
+  for (dom in suspiciousDomains) {
+    if (fromAddress.includes(dom)) {
+      weightedSum += 0.3;
+    }
+  }
+
+
+  if (isGibberish(fromAddress)) {
+    weightedSum += 0.5;
   }
 
   if (snippet.length == 0) {
@@ -115,6 +143,40 @@ function analyzeMsg(snippet, headers) {
   }
 
   return weightedSum;
+}
+
+function isMalicious(link) {
+  const API_KEY = 'AIzaSyB79wA1xBE2pWIzwVITz0GICsPC3BtmKgU'
+  const url = 'https://safebrowsing.googleapis.com/v4/threatMatches:find?key=' + API_KEY;
+  const data = {
+    "client": {
+      "clientId": "UT Austin",
+      "clientVersion": "1.5.2"
+    },
+    "threatInfo": {
+      "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+      "platformTypes": ["ANY_PLATFORM", "WINDOWS", "LINUX", "ANDROID", "OSX", "CHROME", "IOS"],
+      "threatEntryTypes": ["URL", "EXECUTABLE"],
+      "threatEntries": [
+        { "url": link }
+      ]
+    }
+  };
+
+  fetch(url, {
+    method: 'POST', // Specify the HTTP method
+    headers: {
+      'Content-Type': 'application/json' // Indicate the type of content in the body
+    },
+    body: JSON.stringify(data) // Convert the JavaScript object to a JSON string
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json().length > 0;
+    })
+
 }
 // Listener for messages from popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
