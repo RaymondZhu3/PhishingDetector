@@ -129,6 +129,7 @@ html, body {
       box-shadow: 0 0 20px rgba(231, 60, 126, 0.7);
       border-radius: 10px;
       transition: box-shadow 0.5s ease, transform 0.5s ease; /* Add transition */
+      /* background: linear-gradient(45deg, #7d0265, #460aa7); */
 
 }
 
@@ -144,6 +145,8 @@ html, body {
       box-shadow: 0 0 20px rgba(231, 60, 126, 0.7);
       border-radius: 10px;
       transition: box-shadow 0.5s ease, transform 0.5s ease; /* Add transition */
+      /* background: linear-gradient(45deg, #7d0265, #460aa7); */
+
 
 }
 
