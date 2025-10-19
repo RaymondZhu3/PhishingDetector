@@ -33,17 +33,31 @@ function renderCounts(red, yellow) {
     if (warningEl) warningEl.textContent = yellow ?? 0;
 }
 
-// On popup open
-document.addEventListener("DOMContentLoaded", () => {
-    chrome.storage.local.get(["redCount","yellowCount"], (items) => {
-        renderCounts(items.redCount || 0, items.yellowCount || 0);
-    });
-});
+// // On popup open
+// document.addEventListener("DOMContentLoaded", () => {
+//     chrome.storage.local.get(["redCount","yellowCount"], (items) => {
+//         renderCounts(items.redCount || 0, items.yellowCount || 0);
+//     });
+// });
 
-// Listen for live updates while popup is open
-chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === "countsUpdated") {
-        renderCounts(msg.redCount, msg.yellowCount);
-    }
+// // Listen for live updates while popup is open
+// chrome.runtime.onMessage.addListener((msg) => {
+//     if (msg.type === "countsUpdated") {
+//         renderCounts(msg.redCount, msg.yellowCount);
+//     }
+// });
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("popup has beern opened!!");
+    chrome.storage.local.get("emailSummary", (data) => {
+        if (data.emailSummary) {
+            console.log("got here!");
+            console.log(data);
+            const urgentEl = document.getElementsByClassName("urgentVal")[0];
+            const warningEl = document.getElementsByClassName("warningVal")[0];
+            urgentEl.textContent = data.emailSummary.rCount;
+            warningEl.textContent = data.emailSummary.yCount;
+        }
+    });
 });
 
