@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>PhishGuard — Demo Inbox</title>
+  <style>
+    body{font-family:Arial; padding:12px; background:linear-gradient(135deg,#021029,#051025); color: #fff;}
+    .container{max-width:760px;margin:0 auto}
+    .email{background:#fff;border-radius:8px;padding:10px;margin:12px 0;color:#111}
+    .meta{font-size:13px;color:#444}
+    .risk{float:right;font-weight:bold;padding:4px 8px;border-radius:6px}
+    .safe{background:#def7e0;color:#0a6b2f}
+    .susp{background:#fff3cd;color:#8a6d00}
+    .phish{background:#ffd6d6;color:#8b0000}
+    button.preview{margin-top:8px}
+    .explain{font-size:12px;color:#222;margin-top:6px}
+    h1{color:#fff}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PhishGuard — Demo Inbox</h1>
+    <p style="color:#ddd">This is a safe simulated inbox for demo — links are shown as text only.</p>
+    <div id="inbox"></div>
+  </div>
+
+  <!-- Only load external JS -->
+  <script src="demo.js"></script>
+</body>
+</html>

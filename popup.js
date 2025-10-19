@@ -28,3 +28,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+document.getElementById("scanBtn").addEventListener("click", () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { type: "scanNow" }, (response) => {
+            if (response.ok) {
+                console.log(`Scanned ${response.scanned} emails`);
+                alert(`Scanned ${response.scanned} emails!`);
+            } else {
+                console.error(response.error);
+                alert("Error scanning emails: " + response.error);
+            }
+        });
+    });
+});
+
