@@ -1,13 +1,37 @@
+@property --angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 270deg;
+}
+
+:root {
+  --angle: 270deg;
+}
+
 html, body {
   width: 400px;          
-  /* max-width: 400px;      */
   height: 250px;
-  /* min-height: 200px; */
   margin: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: linear-gradient(var(--angle), #bd0398, #090950, #460aa7);
+  
+  background-size: 150% 150%;
+  animation: glow 8s linear infinite;
 }
+
+@keyframes glow {
+  /* Animate the --angle variable */
+  0% { 
+    --angle: 270deg; 
+  }
+  100% { 
+    /* 270deg + 360deg = 630deg */
+    --angle: 630deg; 
+  }
+}
+
 
 .header {
 
@@ -26,13 +50,14 @@ html, body {
       font-size: x-large;
       font-weight: bold;
       margin: 0;
+      color: white;
 }
 
 .header p {
 
       font-size: large;
       margin: 0;
-
+      color: white;
 }
 
 
@@ -43,7 +68,7 @@ html, body {
       padding-bottom: auto;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-end;
 
 }
 
@@ -53,9 +78,29 @@ html, body {
       height: 80%;
       border-radius: 10px;
       cursor: pointer;
-      
-      
+      border: 0;
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: linear-gradient(45deg, #bd0398, #090950, #460aa7);
+      background-size: 600% 600%;
+      /* animation: grandient 6s ease infinite; */
+      box-shadow: 0 0 20px rgba(231, 60, 126, 0.7);
+      transition: transform 0.2s, box-shadow 0.2s;
 
+}
+
+@keyframes grandient {
+  0% { background-position: 50% 0%; }
+  50% { background-position: 50% 100%; }
+  100% { background-position: 50% 0%; }
+}
+
+#scanBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(231, 60, 126, 1);
 }
 
 .results {
@@ -70,5 +115,6 @@ html, body {
 .results p {
 
       font-size: large;
+      color: white;
 }
 
