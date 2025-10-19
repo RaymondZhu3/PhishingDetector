@@ -3,7 +3,7 @@
 Phishing attacks continue to be one of the most common cybersecurity and financial threats, especially for older populations who may not easily recognize malicious emails. We wanted to build a lightweight chrome extension that automatically detects and notifies the user of potentially suspicious emails directly inside Gmail.
 
 ## What it does
-GoPhish scans recent emails in a user's Gmail inbox and flags suspicious ones using text-based heuristics. It highlights an email in red if it is highly risky, yellow if it is moderately suspicious, and green if it is safe. Hovering 
+GoPhish scans recent emails in a user's Gmail inbox and flags suspicious ones using text-based heuristics. It highlights an email in red if it is highly risky, yellow if it is moderately suspicious, and green if it is safe.
 
 ## How we built it
 We built GoPhish as a chrome extension using JavaScript, HTML, and CSS. The content script scans the user's Gmail to read sender names, subjects, and message previews. Our scoring algorithm detects suspicious patterns such as urgent financial language, sketchy links, or mismatched sender domains.
