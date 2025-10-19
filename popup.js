@@ -10,3 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+// chrome.tabs.onActivated.addListener(function(activeInfo) {
+//   // activeInfo object contains information about the newly active tab
+//   // activeInfo.tabId: ID of the tab that has become active
+//   // activeInfo.windowId: ID of the window containing the active tab
+//   console.log("switched tab id: " + activeInfo.tabId);
+
+//   console.log("Tab switched! New active tab ID:", activeInfo.tabId);
+//   // You can perform actions here based on the tab switch,
+//   // such as updating your extension's UI, fetching data, etc.
+// });
+

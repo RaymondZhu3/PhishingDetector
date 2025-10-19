@@ -114,10 +114,10 @@ function computeSuspiciousScore(email) {
         }
 
         // Check if malicious (async)
-        // if (isMalicious(link)) {
-        //     console.log("Malicious link detected:", link);
-        //     return 100; // immediate flag
-        // }
+        if (isMalicious(link)) {
+            console.log("Malicious link detected:", link);
+            return 100; // immediate flag
+        }
     }
 
     urgentWords.forEach(word => {
@@ -160,12 +160,12 @@ function computeSuspiciousScore(email) {
     return Math.min(score, 100);
 }
 
-// function isMalicious(link) {
-//     chrome.runtime.sendMessage({ type: "checkMalicious", link })
-//     .then(isBad => {
-//         return isBad
-//     });    
-// }
+function isMalicious(link) {
+    chrome.runtime.sendMessage({ type: "checkMalicious", link })
+    .then(isBad => {
+        return isBad
+    });    
+}
 
 
 // ---------- Highlight Email ----------
